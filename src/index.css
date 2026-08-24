@@ -1,0 +1,176 @@
+:root {
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #d4d4d4;
+  background-color: #1e1e1e;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app-shell {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.dockview-host {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.panel-fill {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.panel-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 1.5rem;
+  text-align: center;
+  color: #ccc;
+  gap: 0.5rem;
+}
+
+.panel-message code {
+  background: #2d2d2d;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.tic-panel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1c2c;
+}
+
+.tic-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(26, 28, 44, 0.92);
+}
+
+.tic-start-button {
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 1.1rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+.tic-start-button:hover {
+  background: rgba(26, 28, 44, 0.96);
+}
+
+.tic-canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  outline: none;
+  touch-action: none;
+}
+
+.app-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 40px;
+  padding: 0 0.6rem;
+  background: #252526;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.app-toolbar button {
+  font-size: 0.8rem;
+  padding: 0.3rem 0.7rem;
+}
+
+.app-toolbar button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  background: #3a3a3a;
+}
+
+.app-toolbar-hint {
+  font-size: 0.72rem;
+  color: #888;
+}
+
+.app-toolbar-error {
+  font-size: 0.72rem;
+  color: #ff8080;
+  background: rgba(255, 128, 128, 0.1);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  max-width: 40ch;
+}
+
+.app-toolbar-file {
+  display: none;
+}
+
+.panel-tab-fullscreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  cursor: pointer;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.panel-tab-fullscreen:hover {
+  background: transparent;
+  opacity: 1;
+}
+
+button {
+  background: #0e639c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1177bb;
+}
