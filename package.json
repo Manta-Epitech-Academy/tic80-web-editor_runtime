@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "build:export": "node scripts/build-export-payload.mjs",
-    "predev": "node scripts/build-export-payload.mjs",
+    "predev": "node scripts/build-export-payload.mjs && node scripts/fetch-repl.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/build-export-payload.mjs",
+    "prebuild": "node scripts/build-export-payload.mjs && node scripts/fetch-repl.mjs",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "fetch:repl": "node scripts/fetch-repl.mjs"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.3.0",
@@ -30,5 +31,9 @@
     "oxlint": "^1.71.0",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"
+  },
+  "replRuntime": {
+    "version": "v0.3.1",
+    "sha256": "a055b2a1bf00e6b0c4f58f2d503ccff5101c435961c1b022e1cb2a040d637d56"
   }
 }
