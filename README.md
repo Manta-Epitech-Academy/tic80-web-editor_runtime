@@ -1,12 +1,13 @@
-> **Public snapshot — runtime `tic80`.**
-> This repo is the version of [`kevin-cazal/tic80-web-editor`](https://github.com/kevin-cazal/tic80-web-editor) that is
-> currently deployed by the workshop platform
-> [CTFd_coding_platform](https://github.com/kevin-cazal/CTFd_coding_platform),
-> taken at commit `8ad976f`. History is not carried over: this is a snapshot, not a fork.
+> **Runtime `tic80` — the repository the workshop platform deploys.**
+> Started on 2026-08-24 as a snapshot of `kevin-cazal/tic80-web-editor` at `8ad976f`
+> (history not carried over); that repository is archived since 2026-09-15 and this one is
+> where the editor is maintained. Deployed by
+> [workshop_platform](https://github.com/kevin-cazal/workshop_platform) (`deploy/k8s/components/runtimes`).
 > Used by: [pypong_subject](https://github.com/kevin-cazal/pypong_subject), [santa_shooter_subject](https://github.com/kevin-cazal/santa_shooter_subject).
 >
-> `docker pull ghcr.io/kevin-cazal/tic80-web-editor_runtime.src:latest` — the image is built
-> and published by `.github/workflows/` on every push to `main`.
+> `docker pull ghcr.io/kevin-cazal/tic80-web-editor_runtime:latest` — built and published by
+> `.github/workflows/docker.yml` on every push to `main`, tagged `latest` and `<sha>`. The image
+> serves the app at `/runtime/tic80/latest/` (see `docker/nginx.conf`).
 
 # TIC-80 Web Editor
 
