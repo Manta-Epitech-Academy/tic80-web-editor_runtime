@@ -1,6 +1,7 @@
 import { EditorPanel } from '../components/EditorPanel';
 import { ReplPanel } from '../components/ReplPanel';
 import { TicPanel } from '../components/TicPanel';
+import { REPL_LANGUAGES, replLanguage } from './replConfig';
 import type { PanelDefinition, PanelId } from './types';
 
 export const panelRegistry: Record<PanelId, PanelDefinition> = {
@@ -14,9 +15,9 @@ export const panelRegistry: Record<PanelId, PanelDefinition> = {
   },
   repl: {
     component: ReplPanel,
-    title: 'Lua REPL',
-    // Keep the iframe mounted while its tab is hidden: unmounting it would restart Lua and lose
-    // every variable.
+    title: REPL_LANGUAGES[replLanguage ?? 'lua'].title,
+    // Keep the iframe mounted while its tab is hidden: unmounting it would restart the interpreter
+    // and lose every variable.
     renderer: 'always',
   },
 };
