@@ -73,12 +73,14 @@ shows the file as three tabs:
 | Tab | Holds |
 | --- | --- |
 | **Editor** | the `script:` line and the code |
-| **Header** | the other metadata lines: `title`, `author`, `desc`, `site`, `license`, `version`, `input`, `saveid`, `menu` |
+| **Header** | the comments above the `script:` line: `title`, `author`, `desc`, `site`, `license`, `version`, `input`, `saveid`, `menu`, and any comment of your own you add there |
 | **Assets** | the asset sections, as text |
 
-The `script:` line stays with the code, as in TIC-80's own editor: it says which language the code
-is in. A comment of your own at the top of the code (`# note: ...`) is not metadata and stays where
-it is.
+The `script:` line is where the code starts, as in TIC-80's own editor: it says which language the
+code is in. Whatever is below it is code and stays there, a comment that reads like metadata
+included. A cart with no `script:` line (Lua may omit it) has for header only the tags TIC-80
+reads. An asset section starts at a marker alone on its line, at the margin (`-- <TILES>`), so a
+comment in the code that mentions one does not cut the code in two.
 
 It is still one file everywhere else. What goes to TIC-80, what comes back from it (`edit`, a
 sprite drawn in its editor), the autosave, "Save Code", "Load Code" and "Export Game" all handle

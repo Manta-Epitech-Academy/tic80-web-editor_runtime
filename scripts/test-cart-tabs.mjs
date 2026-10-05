@@ -123,6 +123,42 @@ try {
   check('the saved cart is the whole file', saved.includes('# script:  python') && saved.includes('def TIC') && saved.includes('# <PALETTE>'), saved);
   check('TIC-80 holds the edited header', (await ticCart()).includes('# title:   Pong 2'));
 
+  // A line of one's own in the header, then TIC-80 hands the cart back (as `save` does), then one
+  // more keystroke there: the line must be in the file once, and stay in the header.
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type('\n# my first game', { delay: 20 });
+  await page.waitForTimeout(900);
+  await page.evaluate(() => window.Module.onCartChanged(2));
+  await page.waitForTimeout(600);
+  await page.keyboard.type('!', { delay: 20 });
+  await page.waitForTimeout(1800);
+  const once = await savedCart();
+  check('a comment added in the header is in the file once', once.split('# my first game').length === 2, once.slice(0, 200));
+  check('and it is still in the header', (await part('header')).endsWith('# my first game!'), await part('header'));
+  check('the code did not receive it', !(await part('code')).includes('my first game'), await part('code'));
+
+  // Loading the same file again is how one starts over: the editor must show the file, not what
+  // had been typed over it.
+  await tab('Editor').click();
+  await page.waitForFunction(() => window.monaco.editor.getModels().some((m) => m.uri.path.endsWith('cart-code')));
+  for (let i = 0; i < 2; i++) {
+    await page.locator('input.app-toolbar-file').setInputFiles({ name: 'pong.py', mimeType: 'text/plain', buffer: Buffer.from(CART) });
+    await page.waitForTimeout(500);
+    if (i === 0) {
+      await page.locator('.monaco-editor').first().click();
+      await page.keyboard.press('Control+End');
+      await page.keyboard.type('\n# typed over', { delay: 20 });
+      await page.waitForTimeout(300);
+    }
+  }
+  const reset = await part('code');
+  check('loading the same file again shows the file', !reset.includes('typed over') && reset.endsWith('cls(2)'), JSON.stringify(reset.slice(-40)));
+  await page.locator('.monaco-editor').first().click();
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type('\n# end', { delay: 20 });
+  await tab('Assets').click();
+  await page.waitForTimeout(1500);
+
   // A reload restores the autosaved file, split the same way.
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('.tic-start-button').click();
@@ -131,7 +167,7 @@ try {
     null,
     { timeout: 60_000 },
   );
-  await tab('Editor').click();
+  check('the editor is in front again, though Assets was when the page was left', (await activeTab()).trim() === 'Editor');
   await page.waitForFunction(() => window.monaco.editor.getModels().some((m) => m.uri.path.endsWith('cart-code')));
   const again = await part('code');
   check('after a reload the code is back, without header or assets', again.startsWith('# script:  python\n') && again.includes('# end') && !/title:|<TILES>/.test(again), again);

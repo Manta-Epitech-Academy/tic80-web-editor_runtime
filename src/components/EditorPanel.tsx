@@ -34,9 +34,17 @@ function CartPartEditor({ part }: { part: CartPart }) {
         // round-tripping back) keeps the controlled `value` from lagging the
         // live model and flushing the cursor to the bottom while typing.
         const pushed = bridge.getPart(part);
-        const live = editorRef.current?.getValue() ?? null;
-        if (live === null || pushed !== live) {
+        const editor = editorRef.current;
+        if (!editor) {
           setCode(pushed);
+          return;
+        }
+        if (pushed !== editor.getValue()) {
+          // Written to the editor itself, not only to `code`: typing never updates that state
+          // (see onChange), so it may already hold `pushed` from before, and React would then
+          // see nothing to do and leave the editor showing text the cart no longer has.
+          setCode(pushed);
+          editor.setValue(pushed);
         }
       }),
       bridge.onLanguageChange(setLanguage),
