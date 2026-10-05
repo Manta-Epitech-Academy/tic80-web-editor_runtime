@@ -21,6 +21,9 @@ export function applyDefaultLayout(api: DockviewApi): void {
     if (placement.initialHeight) {
       options.initialHeight = placement.initialHeight;
     }
+    if (placement.inactive) {
+      options.inactive = true;
+    }
     if (placement.relativeTo) {
       options.position = {
         referencePanel: placement.relativeTo,
@@ -55,6 +58,9 @@ export function openPanel(api: DockviewApi, id: PanelId): void {
   }
   if (placement?.initialHeight) {
     options.initialHeight = placement.initialHeight;
+  }
+  if (placement?.inactive) {
+    options.inactive = true;
   }
   if (placement?.relativeTo) {
     options.position = {

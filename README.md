@@ -63,6 +63,29 @@ The REPL is [repl_runtime](https://github.com/kevin-cazal/repl_runtime) (an xter
   into `public/repl/` (gitignored). To upgrade, change both fields from the release's
   `SHA256SUMS`. With no network, an existing `public/repl/` is kept.
 
+## The cart, in three tabs
+
+A TIC-80 cart is one text file: the code, the cart's metadata in comments at its top, and its
+assets (`<TILES>`, `<WAVES>`, `<SFX>`, `<PALETTE>`, ...) in comment blocks at its end. TIC-80 needs
+all of it to load and export the cart, but only the code is what you came to write. So the editor
+shows the file as three tabs:
+
+| Tab | Holds |
+| --- | --- |
+| **Editor** | the `script:` line and the code |
+| **Header** | the other metadata lines: `title`, `author`, `desc`, `site`, `license`, `version`, `input`, `saveid`, `menu` |
+| **Assets** | the asset sections, as text |
+
+The `script:` line stays with the code, as in TIC-80's own editor: it says which language the code
+is in. A comment of your own at the top of the code (`# note: ...`) is not metadata and stays where
+it is.
+
+It is still one file everywhere else. What goes to TIC-80, what comes back from it (`edit`, a
+sprite drawn in its editor), the autosave, "Save Code", "Load Code" and "Export Game" all handle
+the whole cart, joined in that order: header, code, assets. The split and the join are in
+`src/bridge/cartFormat.ts`; `scripts/test-cart-tabs.mjs` checks them in a browser, against a
+running `npm run preview`.
+
 ## TIC-80 PRO WASM setup
 
 TIC-80 Web Editor requires a **patched** TIC-80 PRO emscripten build that exposes a small embed API for cart sync with Monaco. Stock upstream `tic80.wasm` will not work.
