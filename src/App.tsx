@@ -5,7 +5,8 @@ import { applyDefaultLayout, openPanel } from './layout/layoutUtils';
 import { Toolbar } from './components/Toolbar';
 import { PanelTab } from './layout/PanelTab';
 import { useLayoutApi } from './layout/LayoutContext';
-import { dockviewComponents } from './layout/panelRegistry';
+import { dockviewComponents, panelRegistry } from './layout/panelRegistry';
+import { replLanguage } from './layout/replConfig';
 import { ESSENTIAL_PANEL_IDS, LAYOUT_STORAGE_KEY, LAYOUT_VERSION, type PanelId } from './layout/types';
 
 interface StoredLayout {
@@ -37,6 +38,21 @@ function saveLayout(api: DockviewReadyEvent['api']): void {
   localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(payload));
 }
 
+// The stored layout is shared by every page of this origin, so it may have been saved by a page
+// with another REPL setting: with the REPL off its panel is removed, and with another language
+// the panel keeps its place and takes the title of the language it now holds.
+function reconcileReplPanel(api: DockviewReadyEvent['api']): void {
+  const panel = api.getPanel('repl');
+  if (!panel) {
+    return;
+  }
+  if (!replLanguage) {
+    panel.api.close();
+  } else if (panel.title !== panelRegistry.repl.title) {
+    panel.api.setTitle(panelRegistry.repl.title);
+  }
+}
+
 function ensureEssentialPanels(api: DockviewReadyEvent['api']): void {
   for (const id of ESSENTIAL_PANEL_IDS) {
     if (!api.getPanel(id)) {
@@ -59,6 +75,7 @@ export function AppShell() {
         applyDefaultLayout(event.api);
       }
 
+      reconcileReplPanel(event.api);
       ensureEssentialPanels(event.api);
 
       event.api.onDidRemovePanel((panel) => {

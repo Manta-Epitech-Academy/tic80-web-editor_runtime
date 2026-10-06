@@ -1,9 +1,12 @@
-// Vendors the Lua REPL panel: downloads a pinned release of kevin-cazal/repl_runtime (the Lua-only
-// archive, ~370 KB) into public/repl/, which Vite serves at <base>/repl/ in dev and copies into
-// dist/ on build.
+// Vendors the REPL panel: downloads a pinned release of kevin-cazal/repl_runtime (the archive with
+// every language, ~6.8 MB, most of it Pyodide) into public/repl/, which Vite serves at
+// <base>/repl/ in dev and copies into dist/ on build.
 //
-// The REPL is an xterm.js terminal running Lua 5.3.6 compiled to WebAssembly with the same flags
-// and standard libraries as TIC-80, entirely in the browser: no server involved. To upgrade,
+// The REPL is an xterm.js terminal, one route per language: lua/ (Lua 5.3.6 compiled to
+// WebAssembly with the same flags and standard libraries as TIC-80), py/ (Pyodide) and js/. All
+// three are vendored because which one the panel shows is decided when the page is opened
+// (`?repl=`, src/layout/replConfig.ts), not when it is built. Entirely in the browser: no server
+// involved, and a page only downloads the language it shows. To upgrade,
 // change `replRuntime` in package.json (version and the archive's sha256 from the release's
 // SHA256SUMS).
 
@@ -19,7 +22,7 @@ const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8
 const { version, sha256 } = pkg.replRuntime;
 const outDir = path.join(rootDir, 'public', 'repl');
 const stamp = path.join(outDir, '.version');
-const url = `https://github.com/kevin-cazal/repl_runtime/releases/download/${version}/repl_runtime-lua-${version}.tar.gz`;
+const url = `https://github.com/kevin-cazal/repl_runtime/releases/download/${version}/repl_runtime-${version}.tar.gz`;
 
 if (fs.existsSync(stamp) && fs.readFileSync(stamp, 'utf8').trim() === sha256) {
   console.log(`repl: ${version} already in public/repl/`);

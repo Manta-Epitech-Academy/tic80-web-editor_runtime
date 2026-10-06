@@ -33,11 +33,28 @@ Open http://localhost:5173
 
 Monaco and the layout work immediately. The TIC-80 panel shows setup instructions until WASM assets are added (see below).
 
-## Lua REPL panel
+## REPL panel
 
-A third panel, under the code editor, holds a Lua REPL: type a line of Lua, press Enter, see the
-result. It is [repl_runtime](https://github.com/kevin-cazal/repl_runtime) (an xterm.js terminal), vendored:
+A third panel, under the code editor, holds a REPL: type a line of code, press Enter, see the
+result. Which language it speaks, or whether it is there at all, is chosen in the address the
+editor is opened with:
 
+| Address | Panel |
+|---|---|
+| no `repl` | Lua REPL (the default) |
+| `?repl=lua` | Lua REPL |
+| `?repl=py` | Python REPL |
+| `?repl=js` | JavaScript REPL |
+| `?repl=off` | no REPL panel |
+
+It is read once, when the page starts, so the panel never appears and then goes away. A subject
+of the workshop platform sets it in its `subject.yaml` (`runtime.params.repl`), and the platform
+adds it to the address of the frame.
+
+The REPL is [repl_runtime](https://github.com/kevin-cazal/repl_runtime) (an xterm.js terminal), vendored:
+
+- **Every language, one download each.** The archive with all three routes is vendored (most of
+  its 6.8 MB is Pyodide), and a page only fetches the language it shows.
 - **Same Lua as TIC-80.** Lua 5.3.6 compiled to WebAssembly from the source TIC-80 embeds, with
   the same `LUA_COMPAT_5_2` flag and the same standard libraries (no `io`, `os`, `utf8`).
 - **Client side only.** It runs in a Web Worker inside an iframe; there is no server.
