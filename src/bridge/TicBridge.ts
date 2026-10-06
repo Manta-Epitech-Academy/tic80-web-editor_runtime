@@ -1,4 +1,6 @@
 import {
+  type CartPart,
+  type CartParts,
   joinCart,
   parseScriptLanguage,
   parseScriptLanguageAny,
@@ -72,8 +74,10 @@ function sleep(ms: number): Promise<void> {
 }
 
 export class TicBridge {
-  private code = '';
-  private resourceTail = '';
+  // The cart, as the three parts the editor tabs show (see cartFormat.ts). A part is kept exactly
+  // as its tab holds it, and only tidied when the parts are joined: an editor that was handed
+  // back a trimmed copy of what was just typed in it would lose the line being started.
+  private parts: CartParts = { header: '', code: '', resources: '' };
   private scriptLanguage = 'lua';
   private workspaceName = 'workspace.lua';
   private syncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -86,9 +90,13 @@ export class TicBridge {
   private audioUnlockInstalled = false;
   private syncingFromTic = false;
   private syncingFromMonaco = false;
+  // A file loaded while TIC-80 was still starting: it could not be handed over yet, and what
+  // TIC-80 says in the meantime (its default cart) must not replace it.
+  private loadedBeforeReady = false;
   private runtimeReadyResolve: (() => void) | null = null;
   private runtimeReadyPromise: Promise<void> | null = null;
   private codeListeners = new Set<(code: string) => void>();
+  private partListeners = new Set<() => void>();
   private languageListeners = new Set<(language: string) => void>();
   private cartLoadedListeners = new Set<(loaded: boolean) => void>();
   private editListeners = new Set<() => void>();
@@ -98,8 +106,14 @@ export class TicBridge {
     // Cart content comes from TIC-80 after boot via embed export API.
   }
 
+  /** The whole cart: header, code and assets, as the one file TIC-80 reads. */
   getCode(): string {
     return this.getProjectContent();
+  }
+
+  /** One part of the cart, as its editor tab shows it. */
+  getPart(part: CartPart): string {
+    return this.parts[part];
   }
 
   getScriptLanguage(): string {
@@ -126,9 +140,7 @@ export class TicBridge {
   loadProjectText(text: string, ext?: string): void {
     const resolvedExt = (ext ?? parseScriptLanguageAny(text)).replace(/^\./, '').toLowerCase();
 
-    const { code, resourceTail } = splitCart(text);
-    this.code = code;
-    this.resourceTail = resourceTail;
+    this.adoptCart(text);
 
     this.workspaceName = workspaceFilename(resolvedExt);
     const nextLanguage = scriptExtToMonacoLanguage(resolvedExt, text);
@@ -143,6 +155,8 @@ export class TicBridge {
 
     if (this.moduleReady && this.embedAvailable) {
       this.importCartToTic();
+    } else {
+      this.loadedBeforeReady = true;
     }
   }
 
@@ -181,6 +195,12 @@ export class TicBridge {
   onCodeChange(listener: (code: string) => void): () => void {
     this.codeListeners.add(listener);
     return () => this.codeListeners.delete(listener);
+  }
+
+  /** Called when any part changed; read the part you show with getPart(). */
+  onPartsChange(listener: () => void): () => void {
+    this.partListeners.add(listener);
+    return () => this.partListeners.delete(listener);
   }
 
   onLanguageChange(listener: (language: string) => void): () => void {
@@ -245,14 +265,16 @@ export class TicBridge {
     document.addEventListener('keydown', resume);
   }
 
-  syncCode(nextCart: string): void {
-    if (this.syncingFromTic) {
+  /**
+   * Take what was typed in one tab. The text is that part and nothing else: it is not split
+   * again, so a line does not jump to another tab while it is being typed.
+   */
+  syncPart(part: CartPart, text: string): void {
+    if (this.syncingFromTic || text === this.parts[part]) {
       return;
     }
 
-    const { code, resourceTail } = splitCart(nextCart);
-    this.code = code;
-    this.resourceTail = resourceTail;
+    this.parts = { ...this.parts, [part]: text };
     this.notifyCodeListeners();
 
     if (!this.moduleReady || !this.embedAvailable) {
@@ -272,6 +294,9 @@ export class TicBridge {
     const cartText = this.getProjectContent();
     for (const listener of this.codeListeners) {
       listener(cartText);
+    }
+    for (const listener of this.partListeners) {
+      listener();
     }
   }
 
@@ -300,7 +325,7 @@ export class TicBridge {
   }
 
   private getProjectContent(): string {
-    return joinCart(this.code, this.resourceTail);
+    return joinCart(this.parts);
   }
 
   private createPreRunHooks(): () => void {
@@ -366,10 +391,24 @@ export class TicBridge {
     }
   }
 
+  /**
+   * Take a whole cart (from TIC-80, a file, the autosave) as the new parts. A part that comes
+   * back as what its tab already holds, give or take the blank lines at its end, keeps the
+   * tab's text: the join trims those, and an editor handed the trimmed copy would lose the line
+   * its user has just opened.
+   */
+  private adoptCart(cartText: string): void {
+    const next = splitCart(cartText);
+    for (const part of ['header', 'code', 'resources'] as const) {
+      if (next[part].trimEnd() === this.parts[part].trimEnd()) {
+        next[part] = this.parts[part];
+      }
+    }
+    this.parts = next;
+  }
+
   private applyCartText(cartText: string): void {
-    const { code, resourceTail } = splitCart(cartText);
-    this.code = code;
-    this.resourceTail = resourceTail;
+    this.adoptCart(cartText);
     this.updateLanguageFromCart(cartText);
     this.cartLoaded = true;
     this.notifyCodeListeners();
@@ -377,6 +416,9 @@ export class TicBridge {
   }
 
   private pullCartFromEmbed(): boolean {
+    if (this.loadedBeforeReady) {
+      return false;
+    }
     const mod = window.Module;
     if (!mod?._tic80_cart_export || !mod._malloc || !mod._free) {
       return false;
@@ -420,7 +462,7 @@ export class TicBridge {
 
   /**
    * Pull only the resource sections (sprites/map/sfx/music/etc.) from TIC-80,
-   * keeping the code currently held from Monaco. Resource edits never change the
+   * keeping the header and the code currently held from Monaco. Resource edits never change the
    * code section, so this avoids clobbering un-synced Monaco keystrokes.
    */
   private pullResourcesFromEmbed(): boolean {
@@ -451,14 +493,14 @@ export class TicBridge {
         return false;
       }
 
-      const { resourceTail } = splitCart(cartText);
-      if (resourceTail === this.resourceTail) {
+      const { resources } = splitCart(cartText);
+      if (resources === this.parts.resources.trim()) {
         return false;
       }
 
       this.syncingFromTic = true;
       try {
-        this.resourceTail = resourceTail;
+        this.parts = { ...this.parts, resources };
         this.notifyCodeListeners();
       } finally {
         this.syncingFromTic = false;
@@ -664,13 +706,21 @@ export class TicBridge {
     await bootPromise;
     await sleep(200);
 
-    if (!(await this.pullCartWithRetry())) {
+    if (!this.loadedBeforeReady && !(await this.pullCartWithRetry())) {
       console.warn('Could not export cart from TIC-80');
     }
 
     this.moduleReady = true;
     window.TIC80_BOOTED = true;
     this.unlockAudio();
+
+    if (this.loadedBeforeReady) {
+      // The file chosen during the start-up is the cart: hand it over now, and leave the
+      // autosave out of it.
+      this.loadedBeforeReady = false;
+      this.importCartToTic();
+      return;
+    }
 
     // Restore any autosaved cart on top of the freshly booted default, so an
     // accidental reload keeps the user's code and resources. Runs after

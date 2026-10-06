@@ -33,7 +33,15 @@ const TIC_API_SUGGESTIONS = [
   { label: 'font', insertText: 'font(${1:text}, ${2:x}, ${3:y}, ${4:color})', detail: 'Draw bitmap font text' },
 ];
 
+let registered = false;
+
 export function registerTicCompletions(monaco: Monaco): void {
+  // Once for the page: every editor that mounts asks, and each registration would list every
+  // function one more time.
+  if (registered) {
+    return;
+  }
+  registered = true;
   monaco.languages.registerCompletionItemProvider('lua', {
     provideCompletionItems: (
       model: editor.ITextModel,

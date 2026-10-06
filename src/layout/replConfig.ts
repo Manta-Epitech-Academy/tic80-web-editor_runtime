@@ -36,10 +36,11 @@ export function parseRepl(search: string): ReplLanguage | null {
   if (OFF.includes(value)) {
     return null;
   }
-  if (value in REPL_LANGUAGES) {
+  // Own keys only: `constructor` is "in" every object, and is not a language.
+  if (Object.hasOwn(REPL_LANGUAGES, value)) {
     return value as ReplLanguage;
   }
-  return ALIASES[value] ?? DEFAULT_REPL;
+  return Object.hasOwn(ALIASES, value) ? ALIASES[value] : DEFAULT_REPL;
 }
 
 /** The REPL this page was opened with; `null` when it was opened with none. */

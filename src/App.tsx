@@ -77,6 +77,9 @@ export function AppShell() {
 
       reconcileReplPanel(event.api);
       ensureEssentialPanels(event.api);
+      // The stored layout remembers which tab was in front. Of the cart's three it is the code
+      // one comes back for, and the code the host means when it focuses "the editor".
+      event.api.getPanel('editor')?.api.setActive();
 
       event.api.onDidRemovePanel((panel) => {
         const id = panel.id as PanelId;
