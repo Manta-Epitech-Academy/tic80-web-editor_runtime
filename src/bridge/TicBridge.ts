@@ -328,6 +328,24 @@ export class TicBridge {
     return joinCart(this.parts);
   }
 
+  /**
+   * When SDL creates its window it sets the canvas to 1x1 and measures it on the page: any
+   * other measure means "CSS sizes this canvas", and SDL takes the measure as the window size.
+   * At a pixel ratio that is not a round value (a browser zoom of 90% or 110%, some display
+   * scalings) the browser measures the 1x1 canvas as about 0.99px. SDL rounds that down, the
+   * window is 0 pixels wide and the first frame throws "The source width is zero". So a 1x1
+   * canvas answers exactly 1x1; at any other size the measure is the browser's own.
+   */
+  private keepProbeSizeWhole(canvas: HTMLCanvasElement): void {
+    canvas.getBoundingClientRect = () => {
+      const rect = HTMLCanvasElement.prototype.getBoundingClientRect.call(canvas);
+      if (canvas.width !== 1 || canvas.height !== 1) {
+        return rect;
+      }
+      return new DOMRect(rect.x, rect.y, Math.round(rect.width), Math.round(rect.height));
+    };
+  }
+
   private createPreRunHooks(): () => void {
     return () => {
       if (typeof ENV !== 'undefined') {
@@ -657,6 +675,7 @@ export class TicBridge {
     }
 
     this.ensureRuntimeReadyPromise();
+    this.keepProbeSizeWhole(canvas);
 
     window.Module = {
       canvas,
