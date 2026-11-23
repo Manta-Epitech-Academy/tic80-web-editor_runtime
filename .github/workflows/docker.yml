@@ -102,3 +102,44 @@ jobs:
           set -euo pipefail
           kubectl rollout restart deploy/tic80-runtime -n ctfd-runtimes
           kubectl rollout status deploy/tic80-runtime -n ctfd-runtimes --timeout=300s
+
+  # The dist in the runtimes bucket, which the workshop platform's proxy serves
+  # at /runtime/tic80/<version>/ (ctfd-workshop-platform docs/DEPLOY.md,
+  # "Runtimes in the bucket"). Two prefixes: the short sha subjects pin,
+  # immutable, and `latest`, the build of main. Independent of the image job:
+  # the image is for the cluster's Services, the bucket is for the proxy, and
+  # the second does not wait for the first. Skips with a notice until the
+  # RUNTIMES_S3_* variables and secrets exist on the organisation.
+  bucket:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - id: sha
+        run: echo "short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Build TIC-80 WASM
+        uses: ./.github/actions/build-wasm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      # Vite bakes the base URL into the dist, so one build per prefix.
+      - name: Build for /runtime/tic80/<sha>/ and /runtime/tic80/latest/
+        env:
+          BUILD_ID: ${{ github.sha }}
+        run: |
+          VITE_BASE=/runtime/tic80/${{ steps.sha.outputs.short }}/ npm run build -- --outDir dist-sha
+          VITE_BASE=/runtime/tic80/latest/ npm run build -- --outDir dist-latest
+      - name: Upload to the runtimes bucket
+        uses: Manta-Epitech-Academy/ctfd-workshop-platform/.github/actions/upload-runtime@main
+        with:
+          runtime-id: tic80
+          version: ${{ steps.sha.outputs.short }}
+          dist: dist-sha
+          latest-dist: dist-latest
+          endpoint: ${{ vars.RUNTIMES_S3_ENDPOINT }}
+          bucket: ${{ vars.RUNTIMES_S3_BUCKET }}
+          region: ${{ vars.RUNTIMES_S3_REGION }}
+          access-key-id: ${{ secrets.RUNTIMES_S3_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.RUNTIMES_S3_SECRET_ACCESS_KEY }}
